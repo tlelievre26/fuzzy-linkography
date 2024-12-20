@@ -196,7 +196,7 @@ function Node(props) {
 		e("text", {
 			x: currLoc.x + 5, y: currLoc.y + 5,
 			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`,
-			"font-size": "smaller",
+			"font-size": "smaller", fill: "#aaa",
 		}, `(→ ${props.forelinkIndex.toFixed(2)}, ← ${props.backlinkIndex.toFixed(2)})`),
 		e("circle", {cx: currLoc.x, cy: currLoc.y, fill: "red", r: 5})
 	);
