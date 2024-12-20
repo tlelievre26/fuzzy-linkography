@@ -5,6 +5,13 @@ const DIMENSION = 384;
 // import react
 const e = React.createElement;
 
+/// global graph properties
+
+const GRAPH_WIDTH = 1000;
+const INIT_X = 10;
+const INIT_Y = 500;
+const MIN_LINK_STRENGTH = 0.35;
+
 /// design moves
 
 const ideas0 = {
@@ -175,41 +182,37 @@ function elbow(pt1, pt2) {
 	return {x, y};
 }
 
-const INIT_X = 10;
-const INIT_Y = 200;
-const MOVE_SPACING = (1000 - (INIT_X * 2)) / Math.max(ideas1.moves.length, ideas2.moves.length, ideas3.moves.length);
-const MIN_LINK_STRENGTH = 0.35;
-
-// Given a design `move` augmented with an `idx`, return the location at which
-// this move should be rendered.
-function moveLoc(move) {
-	return {x: (move.idx * MOVE_SPACING) + INIT_X, y: INIT_Y};
+// Given `props` augmented with the `idx` of a design move, return the location
+// at which this move should be rendered.
+function moveLoc(props) {
+	return {x: (props.idx * props.moveSpacing) + INIT_X, y: INIT_Y};
 }
 
-function Node(props) {
+function DesignMove(props) {
+	const move = props.moves[props.idx];
 	const currLoc = moveLoc(props);
 	return e("g", {},
 		e("text", {
 			x: currLoc.x + 5, y: currLoc.y - 10,
 			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`
-		}, props.text),
+		}, move.text),
 		e("text", {
 			x: currLoc.x + 5, y: currLoc.y + 5,
 			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`,
-			"font-size": "smaller", fill: "#aaa",
-		}, `(→ ${props.forelinkIndex.toFixed(2)}, ← ${props.backlinkIndex.toFixed(2)})`),
+			fontSize: "smaller", fill: "#aaa",
+		}, `(→ ${move.forelinkIndex.toFixed(2)}, ← ${move.backlinkIndex.toFixed(2)})`),
 		e("circle", {cx: currLoc.x, cy: currLoc.y, fill: "red", r: 5})
 	);
 }
 
-function makeLinkObjects(allLinks) {
+function makeLinkObjects(props) {
 	const linkLines = [];
 	const linkJoints = [];
-	for (const [currIdx, linkSet] of Object.entries(allLinks)) {
-		const currLoc = moveLoc({idx: currIdx});
+	for (const [currIdx, linkSet] of Object.entries(props.links)) {
+		const currLoc = moveLoc({...props, idx: currIdx});
 		for (const [prevIdx, strength] of Object.entries(linkSet)) {
 			if (strength < MIN_LINK_STRENGTH) continue; // skip weak connections (arbitrary threshold)
-			const prevLoc = moveLoc({idx: prevIdx});
+			const prevLoc = moveLoc({...props, idx: prevIdx});
 			const jointLoc = elbow(currLoc, prevLoc);
 			const lineStrength = scale(strength, [MIN_LINK_STRENGTH, 1], [255, 0]);
 			const color = `rgb(${lineStrength},${lineStrength},${lineStrength})`;
@@ -226,15 +229,15 @@ function makeLinkObjects(allLinks) {
 }
 
 function FuzzyLinkograph(props) {
-	const {linkLines, linkJoints} = makeLinkObjects(props.links);
-	return e("svg", {viewBox: "0 0 1000 1000"},
+	const {linkLines, linkJoints} = makeLinkObjects(props);
+	return e("svg", {viewBox: `0 0 ${GRAPH_WIDTH} ${(GRAPH_WIDTH / 2) + INIT_Y}`},
 		...linkLines.sort((a, b) => a.strength - b.strength).map(line => {
 			return e("line", {x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2, stroke: line.color});
 		}),
 		...linkJoints.sort((a, b) => a.strength - b.strength).map(joint => {
 			return e("circle", {cx: joint.x, cy: joint.y, r: 5, fill: joint.color});
 		}),
-		...props.moves.map((move, idx) => e(Node, {...move, idx}))
+		...props.moves.map((_, idx) => e(DesignMove, {...props, idx}))
 	);
 }
 
@@ -258,6 +261,7 @@ async function main() {
 	for (const ideaSet of appState.ideaSets) {
 		ideaSet.links = await deriveLinks(ideaSet.moves);
 		computeLinkIndexes(ideaSet);
+		ideaSet.moveSpacing = (GRAPH_WIDTH - (INIT_X * 4)) / (ideaSet.moves.length - 1);
 		console.log(ideaSet);
 	}
 	renderUI();
