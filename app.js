@@ -7,7 +7,7 @@ const e = React.createElement;
 
 /// design moves
 
-const appState = {
+const ideas1 = {
 	moves: [
 		{text: "hello"},
 		{text: "hello world"},
@@ -27,6 +27,28 @@ const appState = {
 		{text: "cat video"},
 		{text: "hello kitty tv show"},
 	],
+};
+
+const ideas2 = {
+	moves: [
+		{text: "a phrase"},
+		{text: "streetlights"},
+		{text: "LED"},
+		{text: "ceiling fixture"},
+		{text: "buzzing"},
+		{text: "Christmas lights"},
+		{text: "giant skeleton"},
+		{text: "trains"},
+		{text: "railroad tracks"},
+		{text: "Alfred Hitchcock"},
+		{text: "cinematography"},
+		{text: "The Fall"},
+		{text: "red"},
+		{text: "billowing cloth"},
+		{text: "lens flare"},
+		{text: "Industrial Light and Magic"},
+		{text: "blue screen"},
+	]
 };
 
 /// math utils
@@ -93,7 +115,7 @@ function elbow(pt1, pt2) {
 
 const INIT_X = 10;
 const INIT_Y = 200;
-const MOVE_SPACING = (1000 - (INIT_X * 2)) / appState.moves.length;
+const MOVE_SPACING = (1000 - (INIT_X * 2)) / Math.max(ideas1.moves.length, ideas2.moves.length);
 const MIN_LINK_STRENGTH = 0.3;
 
 // Given a design `move` augmented with an `idx`, return the location at which
@@ -118,10 +140,8 @@ function makeLinkObjects(allLinks) {
 	const linkJoints = [];
 	for (const [currIdx, linkSet] of Object.entries(allLinks)) {
 		const currLoc = moveLoc({idx: currIdx});
-		console.log(linkSet);
 		for (const [prevIdx, strength] of Object.entries(linkSet)) {
 			if (strength < MIN_LINK_STRENGTH) continue; // skip weak connections (arbitrary threshold)
-			console.log(currIdx, prevIdx, strength);
 			const prevLoc = moveLoc({idx: prevIdx});
 			const jointLoc = elbow(currLoc, prevLoc);
 			const lineStrength = scale(strength, [MIN_LINK_STRENGTH, 1], [255, 0]);
@@ -138,7 +158,7 @@ function makeLinkObjects(allLinks) {
 	return {linkLines, linkJoints};
 }
 
-function App(props) {
+function FuzzyLinkograph(props) {
 	const {linkLines, linkJoints} = makeLinkObjects(props.links);
 	return e("svg", {viewBox: "0 0 1000 1000"},
 		...linkLines.sort((a, b) => a.strength - b.strength).map(line => {
@@ -156,12 +176,17 @@ function renderUI() {
 	if (!root) {
 		root = ReactDOM.createRoot(document.getElementById('app'));
 	}
-	root.render(e(App, appState));
+	root.render(e("div", {},
+		e(FuzzyLinkograph, ideas1),
+		e(FuzzyLinkograph, ideas2)
+	));
 }
 
 async function main() {
-	appState.links = await deriveLinks(appState.moves);
-	console.log(appState);
+	ideas1.links = await deriveLinks(ideas1.moves);
+	console.log(ideas1);
+	ideas2.links = await deriveLinks(ideas2.moves);
+	console.log(ideas2);
 	renderUI();
 }
 
