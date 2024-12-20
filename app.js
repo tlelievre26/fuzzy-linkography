@@ -14,15 +14,34 @@ const MIN_LINK_STRENGTH = 0.35;
 
 /// design moves
 
-const ideas0 = {
+const ideas0a = {
+	title: "Fully connected",
 	moves: [
 		{text: "hello"},
 		{text: "hello"},
 		{text: "hello"},
+		{text: "hello"},
+		{text: "hello"},
+		{text: "hello"},
+		{text: "hello"},
+	]
+};
+
+const ideas0b = {
+	title: "No connection",
+	moves: [
+		{text: "wolves"},
+		{text: "snuggly"},
+		{text: "dishpan"},
+		{text: "cranium"},
+		{text: "disruptor"},
+		{text: "legate"},
+		{text: "orange"},
 	]
 }
 
 const ideas1 = {
+	title: "Stream-of-consciousness ideation (Max)",
 	moves: [
 		{text: "hello"},
 		{text: "hello world"},
@@ -45,6 +64,7 @@ const ideas1 = {
 };
 
 const ideas2 = {
+	title: "Stream-of-consciousness ideation (Isaac)",
 	moves: [
 		{text: "a phrase"},
 		{text: "streetlights"},
@@ -67,6 +87,7 @@ const ideas2 = {
 };
 
 const ideas3 = {
+	title: "Developer Diary",
 	moves: [
 		{text: "Photorealistic environments"},
 		{text: "Fully automatic weapon-equipped vehicles"},
@@ -97,7 +118,7 @@ const ideas3 = {
 		{text: "Religion"},
 		{text: "Politics"},
 	]
-}
+};
 
 /// math utils
 
@@ -230,21 +251,24 @@ function makeLinkObjects(props) {
 
 function FuzzyLinkograph(props) {
 	const {linkLines, linkJoints} = makeLinkObjects(props);
-	return e("svg", {viewBox: `0 0 ${GRAPH_WIDTH} ${(GRAPH_WIDTH / 2) + INIT_Y}`},
-		...linkLines.sort((a, b) => a.strength - b.strength).map(line => {
-			return e("line", {x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2, stroke: line.color});
-		}),
-		...linkJoints.sort((a, b) => a.strength - b.strength).map(joint => {
-			return e("circle", {cx: joint.x, cy: joint.y, r: 5, fill: joint.color});
-		}),
-		...props.moves.map((_, idx) => e(DesignMove, {...props, idx}))
+	return e("div", {className: "fuzzy-linkograph"},
+		e("h2", {}, props.title),
+		e("svg", {viewBox: `0 0 ${GRAPH_WIDTH} ${(GRAPH_WIDTH / 2) + INIT_Y}`},
+			...linkLines.sort((a, b) => a.strength - b.strength).map(line => {
+				return e("line", {x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2, stroke: line.color});
+			}),
+			...linkJoints.sort((a, b) => a.strength - b.strength).map(joint => {
+				return e("circle", {cx: joint.x, cy: joint.y, r: 5, fill: joint.color});
+			}),
+			...props.moves.map((_, idx) => e(DesignMove, {...props, idx}))
+		)
 	);
 }
 
 /// top-level app init
 
 const appState = {
-	ideaSets: [ideas0, ideas1, ideas2, ideas3]
+	ideaSets: [ideas0a, ideas0b, ideas1, ideas2, ideas3]
 };
 
 let root = null;
