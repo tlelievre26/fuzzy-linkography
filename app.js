@@ -104,36 +104,50 @@ function moveLoc(move) {
 
 function Node(props) {
 	const currLoc = moveLoc(props);
-	const links = appState.links[props.idx];
-	const lines = [];
-	for (const [prevIdx, strength] of Object.entries(links)) {
-		if (strength < MIN_LINK_STRENGTH) continue; // skip weak connections (arbitrary threshold)
-		const prevLoc = moveLoc({idx: prevIdx});
-		const jointLoc = elbow(currLoc, prevLoc);
-		const lineStrength = scale(strength, [MIN_LINK_STRENGTH, 1], [0, 1]);
-		lines.push(e("line", {
-			x1: currLoc.x, y1: currLoc.y, x2: jointLoc.x, y2: jointLoc.y,
-			style: {opacity: lineStrength}
-		}));
-		lines.push(e("line", {
-			x1: prevLoc.x, y1: prevLoc.y, x2: jointLoc.x, y2: jointLoc.y,
-			style: {opacity: lineStrength}
-		}));
-		lines.push(e("circle", {cx: jointLoc.x, cy: jointLoc.y, opacity: lineStrength, fill: "black", r: 5}));
-	}
 	return e("g", {},
 		e("text", {
 			x: currLoc.x + 5, y: currLoc.y - 10,
 			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`
 		}, props.text),
-		...lines,
 		e("circle", {cx: currLoc.x, cy: currLoc.y, fill: "red", r: 5})
 	);
 }
 
+function makeLinkObjects(allLinks) {
+	const linkLines = [];
+	const linkJoints = [];
+	for (const [currIdx, linkSet] of Object.entries(allLinks)) {
+		const currLoc = moveLoc({idx: currIdx});
+		console.log(linkSet);
+		for (const [prevIdx, strength] of Object.entries(linkSet)) {
+			if (strength < MIN_LINK_STRENGTH) continue; // skip weak connections (arbitrary threshold)
+			console.log(currIdx, prevIdx, strength);
+			const prevLoc = moveLoc({idx: prevIdx});
+			const jointLoc = elbow(currLoc, prevLoc);
+			const lineStrength = scale(strength, [MIN_LINK_STRENGTH, 1], [255, 0]);
+			const color = `rgb(${lineStrength},${lineStrength},${lineStrength})`;
+			linkLines.push({
+				x1: currLoc.x, y1: currLoc.y, x2: jointLoc.x, y2: jointLoc.y, color, strength,
+			});
+			linkLines.push({
+				x1: prevLoc.x, y1: prevLoc.y, x2: jointLoc.x, y2: jointLoc.y, color, strength,
+			});
+			linkJoints.push({x: jointLoc.x, y: jointLoc.y, color, strength});
+		}
+	}
+	return {linkLines, linkJoints};
+}
+
 function App(props) {
+	const {linkLines, linkJoints} = makeLinkObjects(props.links);
 	return e("svg", {viewBox: "0 0 1000 1000"},
-		props.moves.map((move, idx) => e(Node, {...move, idx}))
+		...linkLines.sort((a, b) => a.strength - b.strength).map(line => {
+			return e("line", {x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2, stroke: line.color});
+		}),
+		...linkJoints.sort((a, b) => a.strength - b.strength).map(joint => {
+			return e("circle", {cx: joint.x, cy: joint.y, r: 5, fill: joint.color});
+		}),
+		...props.moves.map((move, idx) => e(Node, {...move, idx}))
 	);
 }
 
