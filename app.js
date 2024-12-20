@@ -7,6 +7,14 @@ const e = React.createElement;
 
 /// design moves
 
+const ideas0 = {
+	moves: [
+		{text: "hello"},
+		{text: "hello"},
+		{text: "hello"},
+	]
+}
+
 const ideas1 = {
 	moves: [
 		{text: "hello"},
@@ -51,7 +59,44 @@ const ideas2 = {
 	]
 };
 
+const ideas3 = {
+	moves: [
+		{text: "Photorealistic environments"},
+		{text: "Fully automatic weapon-equipped vehicles"},
+		{text: "Highly detailed and interactive urban environments"},
+		{text: "Destructive racing"},
+		{text: "40-hour-plus main quest"},
+		{text: "Squads of adventurers"},
+		{text: "Underwater levels"},
+		{text: "Ice levels"},
+		{text: "Lava levels"},
+		{text: "Fire levels"},
+		{text: "Fighting the occult"},
+		{text: "Water effects"},
+		{text: "3D layering"},
+		{text: "Stone traps"},
+		{text: "Wood traps"},
+		{text: "Environmental hazards"},
+		{text: "Vehicle sections"},
+		{text: "Sniper sections"},
+		{text: "Stealth sections"},
+		{text: "Vehicle sections"},
+		{text: "Two vehicle sections"},
+		{text: "Airplanes"},
+		{text: "Cars"},
+		{text: "Driving"},
+		{text: "Swords"},
+		{text: "Fire"},
+		{text: "Religion"},
+		{text: "Politics"},
+	]
+}
+
 /// math utils
+
+function sum(xs) {
+	return xs.reduce((a, b) => a + b, 0);
+}
 
 function dotProduct(vectorA, vectorB) {
 	let dotProd = 0;
@@ -77,6 +122,23 @@ function scale(num, [oldMin, oldMax], [newMin, newMax]) {
 	const oldRange = oldMax - oldMin;
 	const newRange = newMax - newMin;
 	return (((num - oldMin) / oldRange) * newRange) + newMin;
+}
+
+/// stats on a computed linkograph
+
+function computeLinkIndexes(graph) {
+	for (let i = 0; i < graph.moves.length; i++) {
+		graph.moves[i].backlinkIndex = sum(
+			Object.values(graph.links[i])
+				.filter(n => n >= MIN_LINK_STRENGTH)
+				.map(n => scale(n, [MIN_LINK_STRENGTH, 1], [0, 1]))
+		);
+		graph.moves[i].forelinkIndex = sum(
+			Object.values(graph.links).map(linkSet => linkSet[i] || 0)
+				.filter(n => n >= MIN_LINK_STRENGTH)
+				.map(n => scale(n, [MIN_LINK_STRENGTH, 1], [0, 1]))
+		); 
+	}
 }
 
 /// data processing
@@ -115,8 +177,8 @@ function elbow(pt1, pt2) {
 
 const INIT_X = 10;
 const INIT_Y = 200;
-const MOVE_SPACING = (1000 - (INIT_X * 2)) / Math.max(ideas1.moves.length, ideas2.moves.length);
-const MIN_LINK_STRENGTH = 0.3;
+const MOVE_SPACING = (1000 - (INIT_X * 2)) / Math.max(ideas1.moves.length, ideas2.moves.length, ideas3.moves.length);
+const MIN_LINK_STRENGTH = 0.35;
 
 // Given a design `move` augmented with an `idx`, return the location at which
 // this move should be rendered.
@@ -131,6 +193,11 @@ function Node(props) {
 			x: currLoc.x + 5, y: currLoc.y - 10,
 			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`
 		}, props.text),
+		e("text", {
+			x: currLoc.x + 5, y: currLoc.y + 5,
+			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`,
+			"font-size": "smaller",
+		}, `(→ ${props.forelinkIndex.toFixed(2)}, ← ${props.backlinkIndex.toFixed(2)})`),
 		e("circle", {cx: currLoc.x, cy: currLoc.y, fill: "red", r: 5})
 	);
 }
@@ -177,16 +244,26 @@ function renderUI() {
 		root = ReactDOM.createRoot(document.getElementById('app'));
 	}
 	root.render(e("div", {},
+		e(FuzzyLinkograph, ideas0),
 		e(FuzzyLinkograph, ideas1),
-		e(FuzzyLinkograph, ideas2)
+		e(FuzzyLinkograph, ideas2),
+		e(FuzzyLinkograph, ideas3),
 	));
 }
 
 async function main() {
+	ideas0.links = await deriveLinks(ideas0.moves);
+	computeLinkIndexes(ideas0);
+	console.log(ideas0);
 	ideas1.links = await deriveLinks(ideas1.moves);
+	computeLinkIndexes(ideas1);
 	console.log(ideas1);
 	ideas2.links = await deriveLinks(ideas2.moves);
+	computeLinkIndexes(ideas2);
 	console.log(ideas2);
+	ideas3.links = await deriveLinks(ideas3.moves);
+	computeLinkIndexes(ideas3);
+	console.log(ideas3);
 	renderUI();
 }
 
