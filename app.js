@@ -238,32 +238,28 @@ function FuzzyLinkograph(props) {
 	);
 }
 
+/// top-level app init
+
+const appState = {
+	ideaSets: [ideas0, ideas1, ideas2, ideas3]
+};
+
 let root = null;
 function renderUI() {
 	if (!root) {
 		root = ReactDOM.createRoot(document.getElementById('app'));
 	}
 	root.render(e("div", {},
-		e(FuzzyLinkograph, ideas0),
-		e(FuzzyLinkograph, ideas1),
-		e(FuzzyLinkograph, ideas2),
-		e(FuzzyLinkograph, ideas3),
+		...appState.ideaSets.map(ideas => e(FuzzyLinkograph, ideas))
 	));
 }
 
 async function main() {
-	ideas0.links = await deriveLinks(ideas0.moves);
-	computeLinkIndexes(ideas0);
-	console.log(ideas0);
-	ideas1.links = await deriveLinks(ideas1.moves);
-	computeLinkIndexes(ideas1);
-	console.log(ideas1);
-	ideas2.links = await deriveLinks(ideas2.moves);
-	computeLinkIndexes(ideas2);
-	console.log(ideas2);
-	ideas3.links = await deriveLinks(ideas3.moves);
-	computeLinkIndexes(ideas3);
-	console.log(ideas3);
+	for (const ideaSet of appState.ideaSets) {
+		ideaSet.links = await deriveLinks(ideaSet.moves);
+		computeLinkIndexes(ideaSet);
+		console.log(ideaSet);
+	}
 	renderUI();
 }
 
