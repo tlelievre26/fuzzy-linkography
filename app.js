@@ -282,6 +282,21 @@ function renderUI() {
 }
 
 async function main() {
+	// load json-formatted prompting data
+	try {
+		const json = await (await fetch("./imggen.json")).json();
+		for (const userID of Object.keys(json)) {
+			const sampleRate = 30 / json[userID].length; // downsample to 30ish moves at most
+			appState.ideaSets.push({
+				title: "Prompting data for " + userID,
+				moves: json[userID].filter(x => Math.random() < sampleRate),
+			});
+		}
+	}
+	catch (err) {
+		console.log("Couldn't fetch extra data", err);
+	}
+	// generate linkographs for all idea sets
 	for (const ideaSet of appState.ideaSets) {
 		ideaSet.links = await deriveLinks(ideaSet.moves);
 		computeLinkIndexes(ideaSet);
