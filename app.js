@@ -169,6 +169,51 @@ function computeLinkIndexes(graph) {
 	}
 }
 
+function entropy(pOn, pOff) {
+	const pOnPart = pOn > 0 ? -(pOn * Math.log2(pOn)) : 0;
+	const pOffPart = pOff > 0 ? -(pOff * Math.log2(pOff)) : 0;
+	return pOnPart + pOffPart;
+}
+
+function computeEntropy(graph) {
+	// backlinks and forelinks
+	for (let i = 0; i < graph.moves.length; i++) {
+		// backlinks
+		const maxPossibleBacklinkStrength = i;
+		const backlinkPOn = graph.moves[i].backlinkIndex / maxPossibleBacklinkStrength;
+		const backlinkPOff = 1 - backlinkPOn;
+		graph.moves[i].backlinkEntropy = entropy(backlinkPOn, backlinkPOff);
+		// forelinks
+		const maxPossibleForelinkStrength = graph.moves.length - (i + 1);
+		const forelinkPOn = graph.moves[i].forelinkIndex / maxPossibleForelinkStrength;
+		const forelinkPOff = 1 - forelinkPOn;
+		graph.moves[i].forelinkEntropy = entropy(forelinkPOn, forelinkPOff);
+	}
+	graph.backlinkEntropy = sum(graph.moves.map(move => move.backlinkEntropy));
+	graph.forelinkEntropy = sum(graph.moves.map(move => move.forelinkEntropy));
+	// horizonlinks
+	// each "horizon state" is the set of possible links between pairs of moves
+	// that are N apart from each other
+	graph.horizonlinkEntropy = 0;
+	for (let horizon = 1; horizon < (graph.moves.length - 1); horizon++) {
+		let maxPossibleHorizonlinkStrength = 0;
+		let actualHorizonlinkStrength = 0;
+		// get all pairs of move indexes (i,j) that are N apart
+		for (let i = 0; i <= graph.moves.length - horizon; i++) {
+			const j = i + horizon;
+			maxPossibleHorizonlinkStrength += 1; // a link is possible
+			const linkStrength = graph.links[j]?.[i] || 0;
+			if (linkStrength < MIN_LINK_STRENGTH) continue;
+			actualHorizonlinkStrength += scale(linkStrength, [MIN_LINK_STRENGTH, 1], [0, 1]);
+		}
+		const horizonlinkPOn = actualHorizonlinkStrength / maxPossibleHorizonlinkStrength;
+		const horizonlinkPOff = 1 - horizonlinkPOn;
+		graph.horizonlinkEntropy += entropy(horizonlinkPOn, horizonlinkPOff);
+	}
+	// sum them all up
+	graph.entropy = graph.backlinkEntropy + graph.forelinkEntropy + graph.horizonlinkEntropy;
+}
+
 /// data processing
 
 async function embed(str) {
@@ -300,6 +345,7 @@ async function main() {
 	for (const ideaSet of appState.ideaSets) {
 		ideaSet.links = await deriveLinks(ideaSet.moves);
 		computeLinkIndexes(ideaSet);
+		computeEntropy(ideaSet);
 		ideaSet.moveSpacing = (GRAPH_WIDTH - (INIT_X * 4)) / (ideaSet.moves.length - 1);
 		console.log(ideaSet);
 	}
