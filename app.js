@@ -272,7 +272,7 @@ function DesignMove(props) {
 	const splitBefore = shouldSegmentTimeline(move, props.moves[props.idx - 1]);
 	return e("g", {},
 		(splitBefore ? e("line", {
-			stroke: "#999", strokeDasharray: "2", strokeWidth: "1",
+			stroke: "#999", strokeDasharray: "2", strokeWidth: 1,
 			x1: currLoc.x - (props.moveSpacing / 2), y1: currLoc.y - INIT_Y,
 			x2: currLoc.x - (props.moveSpacing / 2), y2: currLoc.y + INIT_Y,
 		}) : null),
@@ -319,10 +319,13 @@ function FuzzyLinkograph(props) {
 		e("h2", {}, props.title),
 		e("svg", {viewBox: `0 0 ${GRAPH_WIDTH} ${(GRAPH_WIDTH / 2) + INIT_Y}`},
 			...linkLines.sort((a, b) => a.strength - b.strength).map(line => {
-				return e("line", {x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2, stroke: line.color});
+				return e("line", {
+					x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2,
+					stroke: line.color, strokeWidth: 2
+				});
 			}),
 			...linkJoints.sort((a, b) => a.strength - b.strength).map(joint => {
-				return e("circle", {cx: joint.x, cy: joint.y, r: 5, fill: joint.color});
+				return e("circle", {cx: joint.x, cy: joint.y, r: 3, fill: joint.color});
 			}),
 			...props.moves.map((_, idx) => e(DesignMove, {...props, idx}))
 		)
