@@ -15,7 +15,7 @@ const SEGMENT_THRESHOLD = 1000 * 60 * 30; // 30 mins -> milliseconds
 
 /// design moves
 
-const ideas0a = {
+const episode0a = {
 	title: "Fully connected",
 	moves: [
 		{text: "hello"},
@@ -28,7 +28,7 @@ const ideas0a = {
 	]
 };
 
-const ideas0b = {
+const episode0b = {
 	title: "No connection",
 	moves: [
 		{text: "wolves"},
@@ -41,7 +41,7 @@ const ideas0b = {
 	]
 }
 
-const ideas1 = {
+const episode1 = {
 	title: "Stream-of-consciousness ideation (Max)",
 	moves: [
 		{text: "hello"},
@@ -64,7 +64,7 @@ const ideas1 = {
 	],
 };
 
-const ideas2 = {
+const episode2 = {
 	title: "Stream-of-consciousness ideation (Isaac)",
 	moves: [
 		{text: "a phrase"},
@@ -87,7 +87,7 @@ const ideas2 = {
 	]
 };
 
-const ideas3 = {
+const episode3 = {
 	title: "Developer Diary",
 	moves: [
 		{text: "Photorealistic environments"},
@@ -335,7 +335,7 @@ function FuzzyLinkograph(props) {
 /// top-level app init
 
 const appState = {
-	ideaSets: [ideas0a, ideas0b, ideas1, ideas2, ideas3]
+	episodes: [episode0a, episode0b, episode1, episode2, episode3]
 };
 
 let root = null;
@@ -344,7 +344,7 @@ function renderUI() {
 		root = ReactDOM.createRoot(document.getElementById('app'));
 	}
 	root.render(e("div", {},
-		...appState.ideaSets.map(ideas => e(FuzzyLinkograph, ideas))
+		...appState.episodes.map(episode => e(FuzzyLinkograph, episode))
 	));
 }
 
@@ -354,7 +354,7 @@ async function main() {
 		const json = await (await fetch("./imggen.json")).json();
 		for (const userID of Object.keys(json)) {
 			const sampleRate = 30 / json[userID].length; // downsample to 30ish moves at most
-			appState.ideaSets.push({
+			appState.episodes.push({
 				title: "Prompting data for " + userID,
 				moves: json[userID].filter(x => Math.random() < sampleRate),
 			});
@@ -364,12 +364,12 @@ async function main() {
 		console.log("Couldn't fetch extra data", err);
 	}
 	// generate linkographs for all idea sets
-	for (const ideaSet of appState.ideaSets) {
-		ideaSet.links = await deriveLinks(ideaSet.moves);
-		computeLinkIndexes(ideaSet);
-		computeEntropy(ideaSet);
-		ideaSet.moveSpacing = (GRAPH_WIDTH - (INIT_X * 4)) / (ideaSet.moves.length - 1);
-		console.log(ideaSet);
+	for (const episode of appState.episodes) {
+		episode.links = await deriveLinks(episode.moves);
+		computeLinkIndexes(episode);
+		computeEntropy(episode);
+		episode.moveSpacing = (GRAPH_WIDTH - (INIT_X * 4)) / (episode.moves.length - 1);
+		console.log(episode);
 	}
 	renderUI();
 }
