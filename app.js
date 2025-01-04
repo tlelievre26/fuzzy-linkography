@@ -168,6 +168,11 @@ function computeLinkIndexes(graph) {
 				.map(n => scale(n, [MIN_LINK_STRENGTH, 1], [0, 1]))
 		); 
 	}
+	// naïvely mark critical moves: top 3 link indexes in each direction
+	graph.moves.toSorted((a, b) => b.backlinkIndex - a.backlinkIndex).slice(0, 3)
+		.forEach(move => { move.backlinkCriticalMove = true; });
+	graph.moves.toSorted((a, b) => b.forelinkIndex - a.forelinkIndex).slice(0, 3)
+		.forEach(move => { move.forelinkCriticalMove = true; });
 }
 
 function entropy(pOn, pOff) {
@@ -273,7 +278,8 @@ function DesignMove(props) {
 		}) : null),
 		e("text", {
 			x: currLoc.x + 5, y: currLoc.y - 10,
-			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`
+			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`,
+			fontWeight: (move.backlinkCriticalMove || move.forelinkCriticalMove) ? "bold" : "normal",
 		}, move.text),
 		e("text", {
 			x: currLoc.x + 5, y: currLoc.y + 5,
