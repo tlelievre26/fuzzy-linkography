@@ -269,13 +269,7 @@ function shouldSegmentTimeline(currMove, prevMove) {
 function DesignMove(props) {
 	const move = props.moves[props.idx];
 	const currLoc = moveLoc(props);
-	const splitBefore = shouldSegmentTimeline(move, props.moves[props.idx - 1]);
 	return e("g", {},
-		(splitBefore ? e("line", {
-			stroke: "#999", strokeDasharray: "2", strokeWidth: 1,
-			x1: currLoc.x - (props.moveSpacing / 2), y1: currLoc.y - INIT_Y,
-			x2: currLoc.x - (props.moveSpacing / 2), y2: currLoc.y + INIT_Y,
-		}) : null),
 		e("text", {
 			x: currLoc.x + 5, y: currLoc.y - 10,
 			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`,
@@ -288,6 +282,25 @@ function DesignMove(props) {
 		}, `(→ ${move.forelinkIndex.toFixed(2)}, ← ${move.backlinkIndex.toFixed(2)})`),
 		e("circle", {cx: currLoc.x, cy: currLoc.y, fill: "red", r: 5})
 	);
+}
+
+function makeTimelineDividers(props) {
+	const dividers = [];
+	for (let idx = 0; idx < props.moves.length; idx++) {
+		const currLoc = moveLoc({...props, idx});
+		const splitAfter = shouldSegmentTimeline(props.moves[idx + 1], props.moves[idx]);
+		if (!splitAfter) continue;
+		dividers.push(e("line", {
+			stroke: "#999", strokeDasharray: "2", strokeWidth: 1,
+			x1: currLoc.x + (props.moveSpacing / 2), y1: currLoc.y - INIT_Y,
+			x2: currLoc.x + (props.moveSpacing / 2), y2: currLoc.y + INIT_Y,
+		}));
+		dividers.push(e("rect", { // white backing rect over temporal divider for link index text
+			x: currLoc.x + 10, y: currLoc.y - (100 + 10),
+			height: 100, width: 12, fill: "white"
+		}));
+	}
+	return dividers;
 }
 
 function makeLinkObjects(props) {
@@ -314,10 +327,12 @@ function makeLinkObjects(props) {
 }
 
 function FuzzyLinkograph(props) {
+	const dividers = makeTimelineDividers(props);
 	const {linkLines, linkJoints} = makeLinkObjects(props);
 	return e("div", {className: "fuzzy-linkograph"},
 		e("h2", {}, props.title),
 		e("svg", {viewBox: `0 0 ${GRAPH_WIDTH} ${(GRAPH_WIDTH / 2) + INIT_Y}`},
+			...dividers,
 			...linkLines.sort((a, b) => a.strength - b.strength).map(line => {
 				return e("line", {
 					x1: line.x1, y1: line.y1, x2: line.x2, y2: line.y2,
