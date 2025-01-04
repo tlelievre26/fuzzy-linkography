@@ -11,6 +11,7 @@ const GRAPH_WIDTH = 1000;
 const INIT_X = 10;
 const INIT_Y = 500;
 const MIN_LINK_STRENGTH = 0.35;
+const SEGMENT_THRESHOLD = 1000 * 60 * 30; // 30 mins -> milliseconds
 
 /// design moves
 
@@ -254,10 +255,22 @@ function moveLoc(props) {
 	return {x: (props.idx * props.moveSpacing) + INIT_X, y: INIT_Y};
 }
 
+function shouldSegmentTimeline(currMove, prevMove) {
+	if (!(currMove?.timestamp && prevMove?.timestamp)) return false;
+	const deltaTime = Date.parse(currMove.timestamp) - Date.parse(prevMove.timestamp);
+	return deltaTime >= SEGMENT_THRESHOLD;
+}
+
 function DesignMove(props) {
 	const move = props.moves[props.idx];
 	const currLoc = moveLoc(props);
+	const splitBefore = shouldSegmentTimeline(move, props.moves[props.idx - 1]);
 	return e("g", {},
+		(splitBefore ? e("line", {
+			stroke: "#999", strokeDasharray: "2", strokeWidth: "1",
+			x1: currLoc.x - (props.moveSpacing / 2), y1: currLoc.y - INIT_Y,
+			x2: currLoc.x - (props.moveSpacing / 2), y2: currLoc.y + INIT_Y,
+		}) : null),
 		e("text", {
 			x: currLoc.x + 5, y: currLoc.y - 10,
 			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`
