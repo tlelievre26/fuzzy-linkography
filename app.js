@@ -202,7 +202,7 @@ function computeEntropy(graph) {
 	// that are N apart from each other
 	graph.horizonlinkEntropy = 0;
 	for (let horizon = 1; horizon < (graph.moves.length - 1); horizon++) {
-		let maxPossibleHorizonlinkStrength = 0;
+		let maxPossibleHorizonlinkStrength = -1; // off by one otherwise
 		let actualHorizonlinkStrength = 0;
 		// get all pairs of move indexes (i,j) that are N apart
 		for (let i = 0; i <= graph.moves.length - horizon; i++) {
