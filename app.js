@@ -10,6 +10,7 @@ const e = React.createElement;
 const GRAPH_WIDTH = 1000;
 const INIT_X = 10;
 const INIT_Y = 500;
+const MOVE_LINK_BAR_HEIGHT = 40; // how tall the forelink/backlink bars over each move should be
 const MIN_LINK_STRENGTH = 0.35;
 const SEGMENT_THRESHOLD = 1000 * 60 * 30; // 30 mins -> milliseconds
 
@@ -173,6 +174,9 @@ function computeLinkIndexes(graph) {
 		.forEach(move => { move.backlinkCriticalMove = true; });
 	graph.moves.toSorted((a, b) => b.forelinkIndex - a.forelinkIndex).slice(0, 3)
 		.forEach(move => { move.forelinkCriticalMove = true; });
+	// calculate max forelink and backlink indexes seen, for visual scaling
+	graph.maxForelinkIndex = Math.max(...graph.moves.map(move => move.forelinkIndex));
+	graph.maxBacklinkIndex = Math.max(...graph.moves.map(move => move.backlinkIndex));
 }
 
 function entropy(pOn, pOff) {
@@ -269,17 +273,27 @@ function shouldSegmentTimeline(currMove, prevMove) {
 function DesignMove(props) {
 	const move = props.moves[props.idx];
 	const currLoc = moveLoc(props);
+	const scaledForelinkIndex = scale(
+		move.forelinkIndex, [0, props.maxForelinkIndex], [0, MOVE_LINK_BAR_HEIGHT]
+	);
+	const scaledBacklinkIndex = scale(
+		move.backlinkIndex, [0, props.maxBacklinkIndex], [0, MOVE_LINK_BAR_HEIGHT]
+	);
+	const moveLinkBarSize = 10 + MOVE_LINK_BAR_HEIGHT + 10;
 	return e("g", {},
 		e("text", {
-			x: currLoc.x + 5, y: currLoc.y - 10,
-			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`,
+			x: currLoc.x + 5, y: currLoc.y - moveLinkBarSize,
+			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - moveLinkBarSize})`,
 			fontWeight: (move.backlinkCriticalMove || move.forelinkCriticalMove) ? "bold" : "normal",
 		}, move.text),
-		e("text", {
-			x: currLoc.x + 5, y: currLoc.y + 5,
-			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - 10})`,
-			fontSize: "smaller", fill: "#aaa",
-		}, `(→ ${move.forelinkIndex.toFixed(2)}, ← ${move.backlinkIndex.toFixed(2)})`),
+		e("rect", {
+			x: currLoc.x - 5, y: (currLoc.y - 10) - scaledBacklinkIndex,
+			width: 5, height: scaledBacklinkIndex, fill: "#998ec3",
+		}),
+		e("rect", {
+			x: currLoc.x, y: (currLoc.y - 10) - scaledForelinkIndex,
+			width: 5, height: scaledForelinkIndex, fill: "#f1a340",
+		}),
 		e("circle", {cx: currLoc.x, cy: currLoc.y, fill: "red", r: 5})
 	);
 }
@@ -294,10 +308,6 @@ function makeTimelineDividers(props) {
 			stroke: "#999", strokeDasharray: "2", strokeWidth: 1,
 			x1: currLoc.x + (props.moveSpacing / 2), y1: currLoc.y - INIT_Y,
 			x2: currLoc.x + (props.moveSpacing / 2), y2: currLoc.y + INIT_Y,
-		}));
-		dividers.push(e("rect", { // white backing rect over temporal divider for link index text
-			x: currLoc.x + 10, y: currLoc.y - (100 + 10),
-			height: 100, width: 12, fill: "white"
 		}));
 	}
 	return dividers;
