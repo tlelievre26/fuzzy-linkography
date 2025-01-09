@@ -20,11 +20,11 @@ const episode0a = {
 	title: "Fully connected",
 	moves: [
 		{text: "hello"},
+		{text: "hello", actor: 1},
 		{text: "hello"},
+		{text: "hello", actor: 1},
 		{text: "hello"},
-		{text: "hello"},
-		{text: "hello"},
-		{text: "hello"},
+		{text: "hello", actor: 1},
 		{text: "hello"},
 	]
 };
@@ -33,11 +33,11 @@ const episode0b = {
 	title: "No connection",
 	moves: [
 		{text: "wolves"},
-		{text: "snuggly"},
+		{text: "snuggly", actor: 1},
 		{text: "dishpan"},
-		{text: "cranium"},
+		{text: "cranium", actor: 1},
 		{text: "disruptor"},
-		{text: "legate"},
+		{text: "legate", actor: 1},
 		{text: "orange"},
 	]
 }
@@ -280,6 +280,16 @@ function DesignMove(props) {
 		move.backlinkIndex, [0, props.maxBacklinkIndex], [0, MOVE_LINK_BAR_HEIGHT]
 	);
 	const moveLinkBarSize = 10 + MOVE_LINK_BAR_HEIGHT + 10;
+	// create correct move marker based on actor
+	let moveMarker = null;
+	if (move.actor === 1) {
+		moveMarker = e("rect", {
+			x: currLoc.x - 5, y: currLoc.y - 5, height: 10, width: 10, fill: "blue"
+		});
+	}
+	else {
+		moveMarker = e("circle", {cx: currLoc.x, cy: currLoc.y, r: 5, fill: "red"});
+	}
 	return e("g", {},
 		e("text", {
 			x: currLoc.x + 5, y: currLoc.y - moveLinkBarSize,
@@ -294,7 +304,7 @@ function DesignMove(props) {
 			x: currLoc.x, y: (currLoc.y - 10) - scaledForelinkIndex,
 			width: 5, height: scaledForelinkIndex, fill: "#f1a340",
 		}),
-		e("circle", {cx: currLoc.x, cy: currLoc.y, fill: "red", r: 5})
+		moveMarker
 	);
 }
 
