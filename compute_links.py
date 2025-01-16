@@ -24,4 +24,4 @@ def add_links_to_file(fpath):
 		file.seek(0)
 		json.dump(data, file)
 
-add_links_to_file("imggen_50.json")
+add_links_to_file("data/testepisodes.json")

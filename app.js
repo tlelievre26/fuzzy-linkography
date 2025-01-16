@@ -14,114 +14,6 @@ const MOVE_LINK_BAR_HEIGHT = 40; // how tall the forelink/backlink bars over eac
 const MIN_LINK_STRENGTH = 0.35;
 const SEGMENT_THRESHOLD = 1000 * 60 * 30; // 30 mins -> milliseconds
 
-/// design moves
-
-const episode0a = {
-	title: "Fully connected",
-	moves: [
-		{text: "hello"},
-		{text: "hello", actor: 1},
-		{text: "hello"},
-		{text: "hello", actor: 1},
-		{text: "hello"},
-		{text: "hello", actor: 1},
-		{text: "hello"},
-	]
-};
-
-const episode0b = {
-	title: "No connection",
-	moves: [
-		{text: "wolves"},
-		{text: "snuggly", actor: 1},
-		{text: "dishpan"},
-		{text: "cranium", actor: 1},
-		{text: "disruptor"},
-		{text: "legate", actor: 1},
-		{text: "orange"},
-	]
-}
-
-const episode1 = {
-	title: "Stream-of-consciousness ideation (Max)",
-	moves: [
-		{text: "hello"},
-		{text: "hello world"},
-		{text: "dog"},
-		{text: "cat"},
-		{text: "zebra"},
-		{text: "horse"},
-		{text: "hello horse world"},
-		{text: "hello kitty"},
-		{text: "stream of consciousness"},
-		{text: "kitty cat"},
-		{text: "not much money in the kitty"},
-		{text: "piggy bank"},
-		{text: "riverbank"},
-		{text: "stream"},
-		{text: "video stream"},
-		{text: "cat video"},
-		{text: "hello kitty tv show"},
-	],
-};
-
-const episode2 = {
-	title: "Stream-of-consciousness ideation (Isaac)",
-	moves: [
-		{text: "a phrase"},
-		{text: "streetlights"},
-		{text: "LED"},
-		{text: "ceiling fixture"},
-		{text: "buzzing"},
-		{text: "Christmas lights"},
-		{text: "giant skeleton"},
-		{text: "trains"},
-		{text: "railroad tracks"},
-		{text: "Alfred Hitchcock"},
-		{text: "cinematography"},
-		{text: "The Fall"},
-		{text: "red"},
-		{text: "billowing cloth"},
-		{text: "lens flare"},
-		{text: "Industrial Light and Magic"},
-		{text: "blue screen"},
-	]
-};
-
-const episode3 = {
-	title: "Developer Diary",
-	moves: [
-		{text: "Photorealistic environments"},
-		{text: "Fully automatic weapon-equipped vehicles"},
-		{text: "Highly detailed and interactive urban environments"},
-		{text: "Destructive racing"},
-		{text: "40-hour-plus main quest"},
-		{text: "Squads of adventurers"},
-		{text: "Underwater levels"},
-		{text: "Ice levels"},
-		{text: "Lava levels"},
-		{text: "Fire levels"},
-		{text: "Fighting the occult"},
-		{text: "Water effects"},
-		{text: "3D layering"},
-		{text: "Stone traps"},
-		{text: "Wood traps"},
-		{text: "Environmental hazards"},
-		{text: "Vehicle sections"},
-		{text: "Sniper sections"},
-		{text: "Stealth sections"},
-		{text: "Vehicle sections"},
-		{text: "Two vehicle sections"},
-		{text: "Airplanes"},
-		{text: "Cars"},
-		{text: "Driving"},
-		{text: "Swords"},
-		{text: "Fire"},
-		{text: "Religion"},
-		{text: "Politics"},
-	]
-};
-
 /// math utils
 
 function sum(xs) {
@@ -370,7 +262,7 @@ function FuzzyLinkograph(props) {
 /// top-level app init
 
 const appState = {
-	episodes: [episode0a, episode0b, episode1, episode2, episode3]
+	episodes: []
 };
 
 let root = null;
@@ -383,22 +275,33 @@ function renderUI() {
 	));
 }
 
-async function main() {
-	// load json-formatted prompting data
+async function loadDataset(datasetPath) {
 	try {
-		const json = await (await fetch("./imggen_50.json")).json();
-		for (const userID of Object.keys(json)) {
-			const moves = json[userID].moves || json[userID]; // if no .moves, assume whole thing is moves list
+		const json = await (await fetch(datasetPath)).json();
+		for (const episodeID of Object.keys(json)) {
+			const moves = json[episodeID].moves || json[episodeID]; // if no .moves, assume whole thing is moves list
 			const sampleRate = 1; // 30 / moves.length; // downsample to 30ish moves at most
 			appState.episodes.push({
-				title: "Prompting data for " + userID,
+				title: json[episodeID].title || episodeID,
 				moves: moves.filter(x => Math.random() < sampleRate),
-				links: json[userID].links,
+				links: json[episodeID].links,
 			});
 		}
 	}
 	catch (err) {
-		console.log("Couldn't fetch extra data", err);
+		console.log("Couldn't fetch dataset", datasetPath, err);
+	}
+}
+
+async function main() {
+	// load json-formatted data
+	const datasetPaths = [
+		"./data/testepisodes.json",
+		"./data/papers.json",
+		"./data/imggen_50.json",
+	];
+	for (const datasetPath of datasetPaths) {
+		await loadDataset(datasetPath);
 	}
 	// generate linkographs for all episodes
 	for (const episode of appState.episodes) {
