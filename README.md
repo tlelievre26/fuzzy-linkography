@@ -9,6 +9,19 @@ We've already used fuzzy linkography to analyze a few different trace types, inc
 
 What do all of these have in common? Well, every trace records what's called an *episode* of creative activity. An episode consists of an ordered sequence of *design moves* that occurred in the same *design situation*. Pairwise links between moves can be used to indicate the development of recurring ideas or themes through the episode as a whole, and the structure of the whole linkograph can then be analyzed (both visually and quantitatively) to make sense of the episode's overall shape.
 
+## Usage
+First, start up a basic HTTP server at the root of this repository, for instance via Python:
+
+```sh
+python3 -m http.server 6060
+```
+
+Then navigate in your browser to `localhost:6060` (or wherever you set up the server) to view some fuzzy linkographs computed from the test data in `data/test.json`. It sometimes takes `app.js` a while to do its thing when it's processing large datasets – but it'll log each episode to the console as it processes them, so you can pop open the console to watch its progress before the final rendering pass.
+
+**To visualize your own dataset**, first add it to the `data/` directory as a JSON file. (The "Data format" section of this readme contains some examples of how we expect datasets to look.) Then, modify the `datasetPaths` array in `app.js` to include a pointer to your newly added file.
+
+**To pre-compute links for a dataset** you've already stored in a file (so that `app.js` doesn't have to spend a bunch of time computing links in the browser every time you refresh the page), first modify `compute_links.py` so that the `add_links_to_file` call is pointed at your intended file. Then run the script. Be careful, this is a destructive operation – it'll overwrite the target file in place!
+
 ## Data format
 In our current implementation of fuzzy linkography, a design move looks roughly like the following:
 
