@@ -386,21 +386,25 @@ function renderUI() {
 async function main() {
 	// load json-formatted prompting data
 	try {
-		const json = await (await fetch("./imggen.json")).json();
+		const json = await (await fetch("./imggen_50.json")).json();
 		for (const userID of Object.keys(json)) {
-			const sampleRate = 30 / json[userID].length; // downsample to 30ish moves at most
+			const moves = json[userID].moves || json[userID]; // if no .moves, assume whole thing is moves list
+			const sampleRate = 1; // 30 / moves.length; // downsample to 30ish moves at most
 			appState.episodes.push({
 				title: "Prompting data for " + userID,
-				moves: json[userID].filter(x => Math.random() < sampleRate),
+				moves: moves.filter(x => Math.random() < sampleRate),
+				links: json[userID].links,
 			});
 		}
 	}
 	catch (err) {
 		console.log("Couldn't fetch extra data", err);
 	}
-	// generate linkographs for all idea sets
+	// generate linkographs for all episodes
 	for (const episode of appState.episodes) {
-		episode.links = await deriveLinks(episode.moves);
+		if (!episode.links) {
+			episode.links = await deriveLinks(episode.moves);
+		}
 		computeLinkIndexes(episode);
 		computeEntropy(episode);
 		episode.moveSpacing = (GRAPH_WIDTH - (INIT_X * 4)) / (episode.moves.length - 1);
