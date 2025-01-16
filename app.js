@@ -296,7 +296,7 @@ async function loadDataset(datasetPath) {
 async function main() {
 	// load json-formatted data
 	const datasetPaths = [
-		"./data/testepisodes.json",
+		"./data/test.json",
 		"./data/papers.json",
 		"./data/imggen_50.json",
 	];
