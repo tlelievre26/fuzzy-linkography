@@ -48,6 +48,17 @@ function scale(num, [oldMin, oldMax], [newMin, newMax]) {
 
 /// stats on a computed linkograph
 
+function computeLinkDensityIndex(graph) {
+	const totalLinkWeight = sum(Object.values(graph.links).map(
+		linkSet => sum(
+			Object.values(linkSet)
+				.filter(n => n >= MIN_LINK_STRENGTH)
+				.map(n => scale(n, [MIN_LINK_STRENGTH, 1], [0, 1]))
+		)
+	));
+	graph.linkDensityIndex = totalLinkWeight / graph.moves.length;
+}
+
 function computeMoveWeights(graph) {
 	for (let i = 0; i < graph.moves.length; i++) {
 		graph.moves[i].backlinkWeight = sum(
@@ -308,6 +319,7 @@ async function main() {
 		if (!episode.links) {
 			episode.links = await computeLinks(episode.moves);
 		}
+		computeLinkDensityIndex(episode);
 		computeMoveWeights(episode);
 		computeEntropy(episode);
 		episode.moveSpacing = (GRAPH_WIDTH - (INIT_X * 4)) / (episode.moves.length - 1);
