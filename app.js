@@ -48,27 +48,27 @@ function scale(num, [oldMin, oldMax], [newMin, newMax]) {
 
 /// stats on a computed linkograph
 
-function computeLinkIndexes(graph) {
+function computeMoveWeights(graph) {
 	for (let i = 0; i < graph.moves.length; i++) {
-		graph.moves[i].backlinkIndex = sum(
+		graph.moves[i].backlinkWeight = sum(
 			Object.values(graph.links[i])
 				.filter(n => n >= MIN_LINK_STRENGTH)
 				.map(n => scale(n, [MIN_LINK_STRENGTH, 1], [0, 1]))
 		);
-		graph.moves[i].forelinkIndex = sum(
+		graph.moves[i].forelinkWeight = sum(
 			Object.values(graph.links).map(linkSet => linkSet[i] || 0)
 				.filter(n => n >= MIN_LINK_STRENGTH)
 				.map(n => scale(n, [MIN_LINK_STRENGTH, 1], [0, 1]))
 		); 
 	}
-	// naïvely mark critical moves: top 3 link indexes in each direction
-	graph.moves.toSorted((a, b) => b.backlinkIndex - a.backlinkIndex).slice(0, 3)
+	// naïvely mark critical moves: top 3 link weights in each direction
+	graph.moves.toSorted((a, b) => b.backlinkWeight - a.backlinkWeight).slice(0, 3)
 		.forEach(move => { move.backlinkCriticalMove = true; });
-	graph.moves.toSorted((a, b) => b.forelinkIndex - a.forelinkIndex).slice(0, 3)
+	graph.moves.toSorted((a, b) => b.forelinkWeight - a.forelinkWeight).slice(0, 3)
 		.forEach(move => { move.forelinkCriticalMove = true; });
-	// calculate max forelink and backlink indexes seen, for visual scaling
-	graph.maxForelinkIndex = Math.max(...graph.moves.map(move => move.forelinkIndex));
-	graph.maxBacklinkIndex = Math.max(...graph.moves.map(move => move.backlinkIndex));
+	// calculate max forelink and backlink weights seen, for visual scaling
+	graph.maxForelinkWeight = Math.max(...graph.moves.map(move => move.forelinkWeight));
+	graph.maxBacklinkWeight = Math.max(...graph.moves.map(move => move.backlinkWeight));
 }
 
 function entropy(pOn, pOff) {
@@ -81,13 +81,13 @@ function computeEntropy(graph) {
 	// backlinks and forelinks
 	for (let i = 0; i < graph.moves.length; i++) {
 		// backlinks
-		const maxPossibleBacklinkStrength = i;
-		const backlinkPOn = graph.moves[i].backlinkIndex / maxPossibleBacklinkStrength;
+		const maxPossibleBacklinkWeight = i;
+		const backlinkPOn = graph.moves[i].backlinkWeight / maxPossibleBacklinkWeight;
 		const backlinkPOff = 1 - backlinkPOn;
 		graph.moves[i].backlinkEntropy = entropy(backlinkPOn, backlinkPOff);
 		// forelinks
-		const maxPossibleForelinkStrength = graph.moves.length - (i + 1);
-		const forelinkPOn = graph.moves[i].forelinkIndex / maxPossibleForelinkStrength;
+		const maxPossibleForelinkWeight = graph.moves.length - (i + 1);
+		const forelinkPOn = graph.moves[i].forelinkWeight / maxPossibleForelinkWeight;
 		const forelinkPOff = 1 - forelinkPOn;
 		graph.moves[i].forelinkEntropy = entropy(forelinkPOn, forelinkPOff);
 	}
@@ -98,17 +98,17 @@ function computeEntropy(graph) {
 	// that are N apart from each other
 	graph.horizonlinkEntropy = 0;
 	for (let horizon = 1; horizon < (graph.moves.length - 1); horizon++) {
-		let maxPossibleHorizonlinkStrength = -1; // off by one otherwise
-		let actualHorizonlinkStrength = 0;
+		let maxPossibleHorizonlinkWeight = -1; // off by one otherwise
+		let actualHorizonlinkWeight = 0;
 		// get all pairs of move indexes (i,j) that are N apart
 		for (let i = 0; i <= graph.moves.length - horizon; i++) {
 			const j = i + horizon;
-			maxPossibleHorizonlinkStrength += 1; // a link is possible
+			maxPossibleHorizonlinkWeight += 1; // a link is possible
 			const linkStrength = graph.links[j]?.[i] || 0;
 			if (linkStrength < MIN_LINK_STRENGTH) continue;
-			actualHorizonlinkStrength += scale(linkStrength, [MIN_LINK_STRENGTH, 1], [0, 1]);
+			actualHorizonlinkWeight += scale(linkStrength, [MIN_LINK_STRENGTH, 1], [0, 1]);
 		}
-		const horizonlinkPOn = actualHorizonlinkStrength / maxPossibleHorizonlinkStrength;
+		const horizonlinkPOn = actualHorizonlinkWeight / maxPossibleHorizonlinkWeight;
 		const horizonlinkPOff = 1 - horizonlinkPOn;
 		graph.horizonlinkEntropy += entropy(horizonlinkPOn, horizonlinkPOff);
 	}
@@ -165,11 +165,11 @@ function shouldSegmentTimeline(currMove, prevMove) {
 function DesignMove(props) {
 	const move = props.moves[props.idx];
 	const currLoc = moveLoc(props);
-	const scaledForelinkIndex = scale(
-		move.forelinkIndex, [0, props.maxForelinkIndex], [0, MOVE_LINK_BAR_HEIGHT]
+	const scaledForelinkWeight = scale(
+		move.forelinkWeight, [0, props.maxForelinkWeight], [0, MOVE_LINK_BAR_HEIGHT]
 	);
-	const scaledBacklinkIndex = scale(
-		move.backlinkIndex, [0, props.maxBacklinkIndex], [0, MOVE_LINK_BAR_HEIGHT]
+	const scaledBacklinkWeight = scale(
+		move.backlinkWeight, [0, props.maxBacklinkWeight], [0, MOVE_LINK_BAR_HEIGHT]
 	);
 	const moveLinkBarSize = 10 + MOVE_LINK_BAR_HEIGHT + 10;
 	// create correct move marker based on actor
@@ -189,12 +189,12 @@ function DesignMove(props) {
 			fontWeight: (move.backlinkCriticalMove || move.forelinkCriticalMove) ? "bold" : "normal",
 		}, move.text),
 		e("rect", {
-			x: currLoc.x - 5, y: (currLoc.y - 10) - scaledBacklinkIndex,
-			width: 5, height: scaledBacklinkIndex, fill: "#998ec3",
+			x: currLoc.x - 5, y: (currLoc.y - 10) - scaledBacklinkWeight,
+			width: 5, height: scaledBacklinkWeight, fill: "#998ec3",
 		}),
 		e("rect", {
-			x: currLoc.x, y: (currLoc.y - 10) - scaledForelinkIndex,
-			width: 5, height: scaledForelinkIndex, fill: "#f1a340",
+			x: currLoc.x, y: (currLoc.y - 10) - scaledForelinkWeight,
+			width: 5, height: scaledForelinkWeight, fill: "#f1a340",
 		}),
 		moveMarker
 	);
@@ -308,7 +308,7 @@ async function main() {
 		if (!episode.links) {
 			episode.links = await computeLinks(episode.moves);
 		}
-		computeLinkIndexes(episode);
+		computeMoveWeights(episode);
 		computeEntropy(episode);
 		episode.moveSpacing = (GRAPH_WIDTH - (INIT_X * 4)) / (episode.moves.length - 1);
 		console.log(episode);
