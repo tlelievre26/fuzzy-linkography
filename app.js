@@ -122,7 +122,7 @@ async function embed(str) {
 	return (await extractor(str, {convert_to_tensor: "True", pooling: "mean", normalize: true}))[0];
 }
 
-async function deriveLinks(moves) {
+async function computeLinks(moves) {
 	// calculate embeddings for each move
 	for (const move of moves) {
 		move.embedding = (await embed(move.text)).tolist();
@@ -306,7 +306,7 @@ async function main() {
 	// generate linkographs for all episodes
 	for (const episode of appState.episodes) {
 		if (!episode.links) {
-			episode.links = await deriveLinks(episode.moves);
+			episode.links = await computeLinks(episode.moves);
 		}
 		computeLinkIndexes(episode);
 		computeEntropy(episode);
