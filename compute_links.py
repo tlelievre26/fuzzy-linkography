@@ -1,5 +1,7 @@
 from sentence_transformers import SentenceTransformer, util
 import json
+import re
+import time
 
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
@@ -13,15 +15,18 @@ def compute_links(moves):
 	return links
 
 def add_links_to_file(fpath):
-	with open(fpath, "r+") as file:
-		data = json.load(file)
+	with open(fpath, "r") as infile:
+		data = json.load(infile)
 		for ep_id, episode in data.items():
 			print(ep_id)
 			data[ep_id] = {
 				"moves": episode,
 				"links": compute_links([move["text"] for move in episode])
 			}
-		file.seek(0)
-		json.dump(data, file)
+		with open(re.sub(r"\.json$", "_linked.json", fpath), "w") as outfile:
+			json.dump(data, outfile)
 
-add_links_to_file("data/testepisodes.json")
+start = time.time()
+add_links_to_file("data/test.json")
+end = time.time()
+print("Time elapsed:", end - start)

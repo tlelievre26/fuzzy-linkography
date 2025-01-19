@@ -20,7 +20,7 @@ Then navigate in your browser to `localhost:6060` (or wherever you set up the se
 
 **To visualize your own dataset**, first add it to the `data/` directory as a JSON file. (The "Data format" section of this readme contains some examples of how we expect datasets to look.) Then, modify the `datasetPaths` array in `app.js` to include a pointer to your newly added file.
 
-**To pre-compute links for a dataset** you've already stored in a file (so that `app.js` doesn't have to spend a bunch of time computing links in the browser every time you refresh the page), first modify `compute_links.py` so that the `add_links_to_file` call is pointed at your intended file. Then run the script. Be careful, this is a destructive operation – it'll overwrite the target file in place!
+**To pre-compute links for a dataset** you've already stored in a file (so that `app.js` doesn't have to spend a bunch of time computing links in the browser every time you refresh the page), first modify `compute_links.py` so that the `add_links_to_file` call is pointed at your intended file. Then run the script. This will create a new file with the suffix `_linked.json` in place of `.json` at the end of the original file's name.
 
 ## Data format
 In our current implementation of fuzzy linkography, a design move looks roughly like the following:
