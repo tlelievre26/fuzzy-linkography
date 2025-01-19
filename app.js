@@ -48,29 +48,31 @@ function scale(num, [oldMin, oldMax], [newMin, newMax]) {
 
 /// stats on a computed linkograph
 
+// Given `linkStrengths`, a list of raw (unscaled) semantic similarity scores:
+// 1. Threshold each semantic similarity value on `MIN_LINK_STRENGTH`.
+// 2. Scale it from the range `[0, 1]` to the range `[MIN_LINK_STRENGTH, 1]`.
+// 3. Sum up all the scaled values and return the sum.
+function totalLinkWeight(linkStrengths) {
+	return sum(
+		linkStrengths
+			.filter(n => n >= MIN_LINK_STRENGTH)
+			.map(n => scale(n, [MIN_LINK_STRENGTH, 1], [0, 1]))
+	);
+}
+
 function computeLinkDensityIndex(graph) {
-	const totalLinkWeight = sum(Object.values(graph.links).map(
-		linkSet => sum(
-			Object.values(linkSet)
-				.filter(n => n >= MIN_LINK_STRENGTH)
-				.map(n => scale(n, [MIN_LINK_STRENGTH, 1], [0, 1]))
-		)
-	));
-	graph.linkDensityIndex = totalLinkWeight / graph.moves.length;
+	const overallLinkWeight = sum(Object.values(graph.links).map(
+		linkSet => totalLinkWeight(Object.values(linkSet)))
+	);
+	graph.linkDensityIndex = overallLinkWeight / graph.moves.length;
 }
 
 function computeMoveWeights(graph) {
 	for (let i = 0; i < graph.moves.length; i++) {
-		graph.moves[i].backlinkWeight = sum(
-			Object.values(graph.links[i])
-				.filter(n => n >= MIN_LINK_STRENGTH)
-				.map(n => scale(n, [MIN_LINK_STRENGTH, 1], [0, 1]))
-		);
-		graph.moves[i].forelinkWeight = sum(
-			Object.values(graph.links).map(linkSet => linkSet[i] || 0)
-				.filter(n => n >= MIN_LINK_STRENGTH)
-				.map(n => scale(n, [MIN_LINK_STRENGTH, 1], [0, 1]))
-		); 
+		const backlinkStrengths = Object.values(graph.links[i]);
+		graph.moves[i].backlinkWeight = totalLinkWeight(backlinkStrengths);
+		const forelinkStrengths = Object.values(graph.links).map(linkSet => linkSet[i] || 0);
+		graph.moves[i].forelinkWeight = totalLinkWeight(forelinkStrengths);
 	}
 	// naïvely mark critical moves: top 3 link weights in each direction
 	graph.moves.toSorted((a, b) => b.backlinkWeight - a.backlinkWeight).slice(0, 3)
@@ -105,21 +107,25 @@ function computeEntropy(graph) {
 	graph.backlinkEntropy = sum(graph.moves.map(move => move.backlinkEntropy));
 	graph.forelinkEntropy = sum(graph.moves.map(move => move.forelinkEntropy));
 	// horizonlinks
-	// each "horizon state" is the set of possible links between pairs of moves
-	// that are N apart from each other
+	// Each "horizon state" is the set of possible links between pairs of moves
+	// that are N apart from each other. In traditional linkography, the one-link
+	// horizon state at the max possible value of N is skipped, because it always
+	// has entropy of exactly 0 (the singular link either exists or doesn't, and
+	// is fully "predictable" either way). For fuzzy linkography, however, we
+	// include this state in the calculation, because that link may be of some
+	// unknown nonzero strength and therefore some unknown nonzero entropy value.
 	graph.horizonlinkEntropy = 0;
-	for (let horizon = 1; horizon < (graph.moves.length - 1); horizon++) {
-		let maxPossibleHorizonlinkWeight = -1; // off by one otherwise
-		let actualHorizonlinkWeight = 0;
+	for (let horizon = 1; horizon < graph.moves.length; horizon++) {
 		// get all pairs of move indexes (i,j) that are N apart
-		for (let i = 0; i <= graph.moves.length - horizon; i++) {
-			const j = i + horizon;
-			maxPossibleHorizonlinkWeight += 1; // a link is possible
-			const linkStrength = graph.links[j]?.[i] || 0;
-			if (linkStrength < MIN_LINK_STRENGTH) continue;
-			actualHorizonlinkWeight += scale(linkStrength, [MIN_LINK_STRENGTH, 1], [0, 1]);
+		const moveIndexPairs = [];
+		for (let i = 0; i < graph.moves.length - horizon; i++) {
+			moveIndexPairs.push([i, i+horizon]);
 		}
-		const horizonlinkPOn = actualHorizonlinkWeight / maxPossibleHorizonlinkWeight;
+		// get total link weight between these pairs
+		const horizonlinkStrengths = moveIndexPairs.map(([i, j]) => graph.links[j]?.[i] || 0);
+		const horizonlinkWeight = totalLinkWeight(horizonlinkStrengths);
+		// calculate entropy
+		const horizonlinkPOn = horizonlinkWeight / moveIndexPairs.length;
 		const horizonlinkPOff = 1 - horizonlinkPOn;
 		graph.horizonlinkEntropy += entropy(horizonlinkPOn, horizonlinkPOff);
 	}
