@@ -7,9 +7,10 @@ const e = React.createElement;
 
 /// global graph properties
 
+const SHOULD_RENDER_TEXT = false;
 const GRAPH_WIDTH = 1000;
 const INIT_X = 10;
-const INIT_Y = 500;
+const INIT_Y = SHOULD_RENDER_TEXT ? 500 : 60;
 const MOVE_LINK_BAR_HEIGHT = 40; // how tall the forelink/backlink bars over each move should be
 const MIN_LINK_STRENGTH = 0.35;
 const SEGMENT_THRESHOLD = 1000 * 60 * 30; // 30 mins -> milliseconds
@@ -200,11 +201,11 @@ function DesignMove(props) {
 		moveMarker = e("circle", {cx: currLoc.x, cy: currLoc.y, r: 5, fill: "red"});
 	}
 	return e("g", {},
-		e("text", {
+		(SHOULD_RENDER_TEXT ? e("text", {
 			x: currLoc.x + 5, y: currLoc.y - moveLinkBarSize,
 			transform: `rotate(270, ${currLoc.x + 5}, ${currLoc.y - moveLinkBarSize})`,
 			fontWeight: (move.backlinkCriticalMove || move.forelinkCriticalMove) ? "bold" : "normal",
-		}, move.text),
+		}, move.text) : null),
 		e("rect", {
 			x: currLoc.x - 5, y: (currLoc.y - 10) - scaledBacklinkWeight,
 			width: 5, height: scaledBacklinkWeight, fill: "#998ec3",
@@ -225,8 +226,8 @@ function makeTimelineDividers(props) {
 		if (!splitAfter) continue;
 		dividers.push(e("line", {
 			stroke: "#999", strokeDasharray: "2", strokeWidth: 1,
-			x1: currLoc.x + (props.moveSpacing / 2), y1: currLoc.y - INIT_Y,
-			x2: currLoc.x + (props.moveSpacing / 2), y2: currLoc.y + INIT_Y,
+			x1: currLoc.x + (props.moveSpacing / 2), y1: currLoc.y - GRAPH_WIDTH,
+			x2: currLoc.x + (props.moveSpacing / 2), y2: currLoc.y + GRAPH_WIDTH,
 		}));
 	}
 	return dividers;
@@ -328,7 +329,7 @@ async function main() {
 		computeLinkDensityIndex(episode);
 		computeMoveWeights(episode);
 		computeEntropy(episode);
-		episode.moveSpacing = (GRAPH_WIDTH - (INIT_X * 4)) / (episode.moves.length - 1);
+		episode.moveSpacing = (GRAPH_WIDTH - (INIT_X * 2)) / (episode.moves.length - 1);
 		console.log(episode);
 	}
 	renderUI();
