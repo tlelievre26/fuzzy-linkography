@@ -8,6 +8,7 @@ const e = React.createElement;
 /// global graph properties
 
 const SHOULD_RENDER_TEXT = false;
+const SHOULD_COLORIZE_LINKS = true;
 const GRAPH_WIDTH = 1000;
 const INIT_X = 10;
 const INIT_Y = SHOULD_RENDER_TEXT ? 500 : 60;
@@ -243,7 +244,28 @@ function makeLinkObjects(props) {
 			const prevLoc = moveLoc({...props, idx: prevIdx});
 			const jointLoc = elbow(currLoc, prevLoc);
 			const lineStrength = scale(strength, [MIN_LINK_STRENGTH, 1], [255, 0]);
-			const color = `rgb(${lineStrength},${lineStrength},${lineStrength})`;
+			let color = "";
+			if (SHOULD_COLORIZE_LINKS) {
+				const currActor = props.moves[currIdx].actor || 0;
+				const prevActor = props.moves[prevIdx].actor || 0;
+				let targetColor = null;
+				if (currActor === prevActor && currActor === 0) {
+					targetColor = {red: 255, green: 0, blue: 0};
+				}
+				else if (currActor === prevActor && currActor === 1) {
+					targetColor = {red: 0, green: 0, blue: 255};
+				}
+				else {
+					targetColor = {red: 160, green: 0, blue: 255};
+				}
+				const r = scale(strength, [MIN_LINK_STRENGTH, 1], [255, targetColor.red]);
+				const g = scale(strength, [MIN_LINK_STRENGTH, 1], [255, targetColor.green]);
+				const b = scale(strength, [MIN_LINK_STRENGTH, 1], [255, targetColor.blue]);
+				color = `rgb(${r},${g},${b})`;
+			}
+			else {
+				color = `rgb(${lineStrength},${lineStrength},${lineStrength})`;
+			}
 			linkLines.push({
 				x1: currLoc.x, y1: currLoc.y, x2: jointLoc.x, y2: jointLoc.y, color, strength,
 			});
