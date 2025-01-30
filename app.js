@@ -301,7 +301,7 @@ function FuzzyLinkograph(props) {
 
 /// top-level app init
 
-const appState = {
+window.appState = {
 	episodes: []
 };
 
@@ -311,7 +311,7 @@ function renderUI() {
 		root = ReactDOM.createRoot(document.getElementById('app'));
 	}
 	root.render(e("div", {},
-		...appState.episodes.map(episode => e(FuzzyLinkograph, episode))
+		...window.appState.episodes.map(episode => e(FuzzyLinkograph, episode))
 	));
 }
 
@@ -321,7 +321,7 @@ async function loadDataset(datasetPath) {
 		for (const episodeID of Object.keys(json)) {
 			const moves = json[episodeID].moves || json[episodeID]; // if no .moves, assume whole thing is moves list
 			const sampleRate = 1; // 30 / moves.length; // downsample to 30ish moves at most
-			appState.episodes.push({
+			window.appState.episodes.push({
 				title: json[episodeID].title || episodeID,
 				moves: moves.filter(x => Math.random() < sampleRate),
 				links: json[episodeID].links,
