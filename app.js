@@ -135,6 +135,39 @@ function computeEntropy(graph) {
 	graph.entropy = graph.backlinkEntropy + graph.forelinkEntropy + graph.horizonlinkEntropy;
 }
 
+function computeActorLinkStats(graph) {
+	const linkStrengthsByActorPair = {};
+	const possibleLinkCountsByActorPair = {};
+	graph.copyCount = 0;
+	for (let i = 0; i < graph.moves.length - 1; i++) {
+		const actorA = graph.moves[i]?.actor || 0;
+		for (let j = i + 1; j < graph.moves.length; j++) {
+			// skip ~verbatim copies
+			if ((graph.links[j]?.[i] || 0) >= 0.99) {
+				graph.copyCount++;
+				continue;
+			}
+			const actorB = graph.moves[j]?.actor || 0;
+			// track the raw link weights of backlinks from actor B to actor A
+			const pair = [actorB, actorA].join(":");
+			if (!linkStrengthsByActorPair[pair]) {
+				linkStrengthsByActorPair[pair] = [];
+			}
+			linkStrengthsByActorPair[pair].push(graph.links[j]?.[i] || 0);
+			// increment count of possible backlinks from actor B to actor A
+			if (!possibleLinkCountsByActorPair[pair]) {
+				possibleLinkCountsByActorPair[pair] = 0;
+			}
+			possibleLinkCountsByActorPair[pair] += 1;
+		}
+	}
+	const linkDensitiesByActorPair = {};
+	for (const [pair, strengths] of Object.entries(linkStrengthsByActorPair)) {
+		linkDensitiesByActorPair[pair] = totalLinkWeight(strengths) / possibleLinkCountsByActorPair[pair];
+	}
+	graph.linkDensitiesByActorPair = linkDensitiesByActorPair;
+}
+
 /// data processing
 
 async function embed(str) {
@@ -245,7 +278,7 @@ function makeLinkObjects(props) {
 			const jointLoc = elbow(currLoc, prevLoc);
 			const lineStrength = scale(strength, [MIN_LINK_STRENGTH, 1], [255, 0]);
 			let color = "";
-			if (SHOULD_COLORIZE_LINKS) {
+			if (props.actors.size > 1 && SHOULD_COLORIZE_LINKS) {
 				const currActor = props.moves[currIdx].actor || 0;
 				const prevActor = props.moves[prevIdx].actor || 0;
 				let targetColor = null;
@@ -345,12 +378,16 @@ async function main() {
 	}
 	// generate linkographs for all episodes
 	for (const episode of appState.episodes) {
+		episode.actors = new Set(episode.moves.map(m => m.actor || 0));
 		if (!episode.links) {
 			episode.links = await computeLinks(episode.moves);
 		}
 		computeLinkDensityIndex(episode);
 		computeMoveWeights(episode);
 		computeEntropy(episode);
+		if (episode.actors.size > 1) {
+			computeActorLinkStats(episode);
+		}
 		episode.moveSpacing = (GRAPH_WIDTH - (INIT_X * 2)) / (episode.moves.length - 1);
 		console.log(episode);
 	}
