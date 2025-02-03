@@ -22,6 +22,12 @@ Then navigate in your browser to `localhost:6060` (or wherever you set up the se
 
 **To pre-compute links for a dataset** you've already stored in a file (so that `app.js` doesn't have to spend a bunch of time computing links in the browser every time you refresh the page), first modify `compute_links.py` so that the `add_links_to_file` call is pointed at your intended file. Then run the script. This will create a new file with the suffix `_linked.json` in place of `.json` at the end of the original file's name.
 
+**To configure visualization properties**, edit the constants at the top of `app.js`. Properties of particular note are:
+- `MOVE_TEXT_MODE`, used to configure rendering of textual move labels. Possible values are `"FULL"` (render full move text above every move), `"INDEX"` (render only a numeric move index), and `"NONE"` (don't render text above moves at all.)
+- `SHOULD_COLORIZE_LINKS`, used to enable or disable link colorization in multi-actor linkographs.
+- `MIN_LINK_STRENGTH`, used to set the cutoff "raw" cosine similarity value that must be exceeded for a link to be drawn between a given pair of moves.
+- `SEGMENT_THRESHOLD`, used to set how many milliseconds must elapse between two timestamped moves before a dotted vertical line is rendered between them.
+
 ## Data format
 In our current implementation of fuzzy linkography, a design move looks roughly like the following:
 
@@ -29,13 +35,13 @@ In our current implementation of fuzzy linkography, a design move looks roughly 
 {
 	"text": "smash the plates on the floor",
 	"timestamp": "2024-12-11T01:46:09.656Z",
-	"actor": 4
+	"actor": 1
 }
 ```
 
 ...where everything except the short `text` string is optional.
 
-- The `actor` value, if present, is a numeric ID representing the "actor index" of whoever performed this design move. We use this to visualize episodes involving multiple different actors (e.g., group members in a group brainstorming session; the human and the computer if we're looking at logs of someone working with a co-creative AI system).
+- The `actor` value, if present, is a numeric ID representing the "actor index" of whoever performed this design move. We use this to visualize episodes involving multiple different actors (e.g., group members in a group brainstorming session; the human and the computer if we're looking at logs of someone working with a co-creative AI system). Currently the only supported actor indexes are `0` and `1`.
 - The `timestamp` value, if present, is a datetime string indicating when this design move occurred. We use these to render visual separators in fuzzy linkographs between pairs of moves that were separated by at least some minimum amount of time.
 
 Why do design moves have to be short text strings? Well, in a broad sense, they don't *have* to be; it's just that we're only set up to automatically infer links between short text strings right now. In the future, we hope that this technique can also be pretty easily extended to work with longer texts, images, and basically any other kinds of expressive artifacts between which relatedness can be automatically assessed.
