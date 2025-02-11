@@ -90,3 +90,18 @@ Top-level values may also contain precomputed links between design moves, in whi
 ```
 
 Within `links`, top-level and second-level keys both represent indexes of moves in the associated `moves` array. Each value represents the strength of the link between the top-level and second-level moves. Only *backlinks* are actually stored – i.e., we only explicitly calculate each move's association with the moves *before* it, since the forelinks are symmetrical.
+
+## Publications
+If you build on this work, please cite the following [paper](https://arxiv.org/abs/2502.04599):
+
+```bibtex
+@misc{FuzzyLinkography,
+	title={Fuzzy Linkography: Automatic Graphical Summarization of Creative Activity Traces},
+	author={Amy Smith and Barrett R. Anderson and Jasmine Tan Otto and Isaac Karth and Yuqian Sun and John Joon Young Chung and Melissa Roemmele and Max Kreminski},
+	year={2025},
+	eprint={2502.04599},
+	archivePrefix={arXiv},
+	primaryClass={cs.HC},
+	url={https://arxiv.org/abs/2502.04599},
+}
+```
