@@ -1,5 +1,6 @@
 // import embeddings lib
 import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.9.0/dist/transformers.min.js";
+import settings from './config.json' assert { type: 'json' };
 const extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
 const DIMENSION = 384;
 // import react
@@ -76,11 +77,29 @@ function computeMoveWeights(graph) {
 		const forelinkStrengths = Object.values(graph.links).map(linkSet => linkSet[i] || 0);
 		graph.moves[i].forelinkWeight = totalLinkWeight(forelinkStrengths);
 	}
-	// naïvely mark critical moves: top 3 link weights in each direction
-	graph.moves.toSorted((a, b) => b.backlinkWeight - a.backlinkWeight).slice(0, 3)
-		.forEach(move => { move.backlinkCriticalMove = true; });
-	graph.moves.toSorted((a, b) => b.forelinkWeight - a.forelinkWeight).slice(0, 3)
-		.forEach(move => { move.forelinkCriticalMove = true; });
+
+	if(settings.enabled) {
+		graph.moves.forEach((move) => {
+			if(settings.fwrd_threshold != -1 && move.forelinkWeight >= settings.fwrd_threshold) {
+				move.forelinkCriticalMove = true
+			}
+			if(settings.bkwrd_threshold != -1 && move.forelinkWeight >= settings.bkward_threshold) {
+				move.backlinkCriticalMove = true
+			}
+			if(settings.both_threshold != -1 && move.forelinkWeight + move.backlinkWeight >= settings.both_threshold) {
+				move.forelinkCriticalMove = true
+				move.backlinkCriticalMove = true
+			}
+		})
+	}
+	else {
+		// naïvely mark critical moves: top 3 link weights in each direction
+		graph.moves.toSorted((a, b) => b.backlinkWeight - a.backlinkWeight).slice(0, 3)
+			.forEach(move => { move.backlinkCriticalMove = true; });
+		graph.moves.toSorted((a, b) => b.forelinkWeight - a.forelinkWeight).slice(0, 3)
+			.forEach(move => { move.forelinkCriticalMove = true; });
+	}
+
 	// calculate max forelink and backlink weights seen, for visual scaling
 	graph.maxForelinkWeight = Math.max(...graph.moves.map(move => move.forelinkWeight));
 	graph.maxBacklinkWeight = Math.max(...graph.moves.map(move => move.backlinkWeight));

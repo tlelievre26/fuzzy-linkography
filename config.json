@@ -1,0 +1,6 @@
+{
+    "enabled": false,
+    "fwrd_threshold": -1,
+    "bkwrd_threshold": -1,
+    "both_threshold": -1
+}
