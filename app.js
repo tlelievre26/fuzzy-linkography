@@ -1,7 +1,14 @@
 // import embeddings lib
 import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.9.0/dist/transformers.min.js";
-import settings from './config.json' assert { type: 'json' };
+
 const extractor = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
+let settings = {} 
+fetch('./config.json')
+	.then(response => response.json())
+	.then(data => {
+		console.log(data)
+		settings = {...data}
+	})
 const DIMENSION = 384;
 // import react
 const e = React.createElement;
@@ -78,15 +85,26 @@ function computeMoveWeights(graph) {
 		graph.moves[i].forelinkWeight = totalLinkWeight(forelinkStrengths);
 	}
 
+
+	// Enable our own thresholds through config.json
+	// -1 is a placeholder to disable CMs in that direction
 	if(settings.enabled) {
+		console.log(settings)
 		graph.moves.forEach((move) => {
+			
 			if(settings.fwrd_threshold != -1 && move.forelinkWeight >= settings.fwrd_threshold) {
+				console.log(move)
+				console.log("Move is critical forward")
 				move.forelinkCriticalMove = true
 			}
 			if(settings.bkwrd_threshold != -1 && move.forelinkWeight >= settings.bkward_threshold) {
+				console.log(move)
+				console.log("Move is critical backwards")
 				move.backlinkCriticalMove = true
 			}
 			if(settings.both_threshold != -1 && move.forelinkWeight + move.backlinkWeight >= settings.both_threshold) {
+				console.log(move)
+				console.log("Move is critical in both directions")
 				move.forelinkCriticalMove = true
 				move.backlinkCriticalMove = true
 			}
